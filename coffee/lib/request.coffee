@@ -45,19 +45,29 @@ module.exports = (cache) ->
 				qs: get_options
 			}
 
+			deserialize = (resp) ->
+				# check if body is object
+				if typeof resp is 'object'
+					return resp
+
+				try
+					# try to parse the json
+					return JSON.parse resp
+				catch
+					# otherwise return resp
+					return resp
+
+
 			request(options, (error, r, body) ->
 				response = undefined
 				if body? and r.statusCode == 200
-					if typeof body is 'string'
-						try
-							response = JSON.parse body
-						catch
-					if typeof body is 'object'
-						response = body
+					response = deserialize body
 					defer.resolve response
 					return
 				else
-					defer.reject "An error occured while performing the request"
+					error = new Error("An error occured while performing the request")
+					error.body = deserialize body
+					defer.reject error
 				if error
 					defer.reject error
 			);
